@@ -8,10 +8,11 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import os
 
-RUTA = Path(__file__).parent.parent / "data" / "almuerzos_entrenamiento.csv"
+file_path = os.path.join(os.getcwd(), "data", "almuerzos_entrenamiento.csv")
 
-df = pd.read_csv(RUTA, parse_dates=["fecha"])
+df = pd.read_csv(file_path, parse_dates=["fecha"])
 
 FEATURES = ["temperatura_c", "llovio", "precio", "es_quincena", "dia_semana",
             "ingreso_dia"]  # el ingreso del dia ayuda MUCHISIMO al modelo ;)
