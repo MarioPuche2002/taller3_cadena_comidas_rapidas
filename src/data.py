@@ -18,6 +18,6 @@ def cargar_datos():
     df_meses = pd.get_dummies(df['mes'], prefix='mes', dtype=int)
     df = pd.concat([df, df_meses], axis=1)
 
-    print(df)
+    #print(df)
 
     return df
