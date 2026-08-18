@@ -1,13 +1,16 @@
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import ElasticNet
 
 def crear_modelo():
-    model = RandomForestRegressor(
-        n_estimators=100,
-        max_depth=8,
-        max_features=0.8,
-        min_samples_leaf=2,
-        min_samples_split=8,
-        random_state=42
-    )
-    return model
+
+    modelo = Pipeline([
+        ('scaler', StandardScaler()),
+        ('elastic', ElasticNet(
+            alpha=0.1,
+            l1_ratio=0.5,
+            random_state=42,
+            max_iter=30000
+        ))])
     
+    return modelo
