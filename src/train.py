@@ -1,8 +1,9 @@
 from features import data_split
-from sklearn.preprocessing import StandardScaler
 from model import crear_modelo
+from sklearn.preprocessing import StandardScaler
 
 def training():
+
     X, y = data_split()
     train_size = int(len(X) * 0.8)
     
@@ -15,8 +16,7 @@ def training():
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train) 
     X_test_scaled = scaler.transform(X_test)       
-    
     modelo = crear_modelo()
     modelo.fit(X_train_scaled, y_train)
     
-    return modelo, X_test_scaled, y_test
+    return modelo, X_test_scaled, y_test, scaler
