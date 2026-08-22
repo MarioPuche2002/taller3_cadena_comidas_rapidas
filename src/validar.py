@@ -13,7 +13,6 @@ def validar():
     print(f"Métrica       | Entrenamiento | Prueba (Test)")
     print(f"---------------------------------------------")
     print(f"MAE           | {metricas_train['mae']:.2f}         | {mae_test:.2f} almuerzos")
-    print(f"MAPE          | {metricas_train['mape']:.2f}%        | {mape_test:.2f}%")
     print(f"R2            | {metricas_train['r2']:.2f}          | {r2_test:.2f}")
     print("=============================================")
     
