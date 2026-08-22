@@ -1,42 +1,70 @@
-# Taller Semana 3 — Demanda por sede (cadena nacional) 🏢📊
+# Demanda de almuerzos por sede — modelo honesto
+---
 
-Bienvenido al repositorio del taller. **Empieza leyendo [`ENUNCIADO_TALLER.md`](ENUNCIADO_TALLER.md)** —
-ahí está la historia, la misión, el contrato de entrega y la rúbrica.
+## Auditoría (las 3 trampas)
 
-## Qué hay en este repo
+### 1. Features que no existen a las 6am del día a predecir
+
+El histórico trae columnas como `llovio`, `ingreso_dia` que registran si el evento sucedio pero una vez finalizado el día.A las 6 am no se puede saber si va a llover.
+
+### 2. Split incorrecto
+
+Si el split train/test se hace de forma aleatoria (`train_test_split` con shuffl), el conjunto de "prueba" termina
+mezclado con días anteriores a los de entrenamiento. El modelo efectivamente aprende de un rango de fechas que incluye información de fechas futuras.
+
+---
+
+## Nuestro pipeline honesto
+
+- **Features:** solo variables conocibles antes de las 6am del día a predecir
+  (`temperatura_c` como pronóstico, `precio`, `es_quincena`, `dia_semana`, `mes`).
+  Se descartaron los rezagos autorregresivos del target para eliminar cualquier
+  ambigüedad de leak por construcción.
+- **Pipeline de sklearn:** `StandardScaler` + `ElasticNet` dentro de un mismo
+  `Pipeline`. El escalado se ajusta (`fit`) únicamente sobre el set de entrenamiento;
+  el mismo objeto se reutiliza tal cual para predecir sobre datos nuevos, sin
+  recalcular nada a mano.
+- **Validación temporal:** los datos se ordenan por `fecha` y el "examen interno" es
+  el último tramo cronológico del histórico (15%), no una muestra aleatoria.
+- **Limpieza defensiva de datos:** conversión de tipos, eliminación de columnas con
+  >90% de nulos, imputación (mediana/moda) para nulos entre 10% y 90%, y eliminación
+  de filas para nulos <10% — pensado para que el pipeline no se caiga si el CSV de una
+  sede real viene con datos sucios.
+
+---
+
+## Metricas obtenidas
+
+```
+=== AUDITORÍA / COMPARATIVA DE MODELO ===
+Métrica       | Entrenamiento | Prueba (Test)
+---------------------------------------------
+MAE           | 9.50          | 9.55 almuerzos
+R2            | 0.50          | 0.53
+=============================================
+```
+La metrica principal en la que se probaron los analisis y se busco minimizar fue el MAE , el R2 se tomo como una referencia para ver el ajuste del modelo y examinar el sobreajuste (si lo habia)
+
+## Estructura del repositorio
 
 ```
 demanda-sede-ml/
-├── ENUNCIADO_TALLER.md    <- LÉEME PRIMERO
-├── data/
-│   └── almuerzos_entrenamiento.csv   # tu muestra de datos (una sede)
+├── data/almuerzos_entrenamiento.csv
 ├── src/
-│   └── entrenar.py        # el modelo del "analista junior" — el que vas a auditar
+│   ├── config.py
+│   ├── data.py
+│   ├── features.py
+│   ├── model.py
+│   ├── train.py
+│   ├── validar.py
+│   └── predict.py
 ├── requirements.txt
-└── README.md              # este archivo
+└── README.md
 ```
 
-## Cómo arrancar
+## Uso
 
 ```bash
-# 1. Entorno virtual
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\Activate.ps1
-
-# 2. Dependencias
-pip install -r requirements.txt
-
-# 3. Corre el modelo del analista tal como llegó (para ver su "métrica milagrosa")
-python src/entrenar.py
+python src/validar.py
+python src/predict.py <ruta_features.csv> <ruta_salida.csv>
 ```
-
-## Tu trabajo (resumen — el detalle está en el ENUNCIADO)
-
-1. **Audita** el modelo del analista: encuentra por qué su métrica miente.
-2. **Reconstruye** un modelo honesto con `Pipeline` + validación temporal.
-3. **Implementa el contrato** `python src/predict.py <features.csv> <salida.csv>`.
-4. Documenta todo en tu propio README (secciones "Auditoría" y "Nuestro MAE honesto")
-   y trabaja con **≥5 commits** que cuenten el proceso.
-
-Al final, el profesor evaluará tu `predict.py` contra un conjunto de datos oculto y
-publicará el leaderboard. Éxitos 🚀

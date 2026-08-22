@@ -1,42 +1,25 @@
 import sys
 import pandas as pd
-import joblib
-from data import cargar_datos
+from features import data_split
 from train import training
 
-def generar_predicciones(ruta_entrada, ruta_salida):
 
-    df_historico = cargar_datos()
-    df_futuro = pd.read_csv(ruta_entrada, parse_dates=["fecha"])
-    
+def generar_predicciones(ruta_entrada, ruta_salida):
+    columnas_modelo, _ = data_split()
     modelo, _, _, _, _ = training()
-    
-    # 4. Lógica para rellenar rezagados autorregresivos
-    # Necesitas el último valor conocido del histórico
-    ultimo_real = df_historico.iloc[-1]['almuerzos']
-    
-    # Unir histórico y futuro para calcular los 'shift' correctamente
-    # (Este es un enfoque simplificado)
-    df_completo = pd.concat([df_historico, df_futuro], axis=0, sort=False)
-    
-    # Recalcular rezagados en el df_futuro usando la lógica de data.py
-    df_completo['almuerzos_ayer'] = df_completo['almuerzos'].shift(1)
-    df_completo['almuerzos_semana_pasada'] = df_completo['almuerzos'].shift(7)
-    
-    # Filtrar solo la parte que corresponde al futuro
-    X_futuro = df_completo.iloc[len(df_historico):].copy()
-    
+
+    df_futuro = pd.read_csv(ruta_entrada, parse_dates=["fecha"])
+
+    df_dias = pd.get_dummies(df_futuro["dia_semana"], prefix="dia", dtype=int)
+    df_mes = pd.get_dummies(df_futuro["fecha"].dt.month, prefix="mes", dtype=int)
+    df_feat = pd.concat([df_futuro, df_dias, df_mes], axis=1)
+
+    X_futuro = df_feat.reindex(columns=columnas_modelo.columns, fill_value=0)
     predicciones = modelo.predict(X_futuro)
-    
-    df_resultado = pd.DataFrame({
-        'fecha': df_futuro['fecha'],
-        'prediccion': predicciones})
-    
-    df_resultado.to_csv(ruta_salida, index=False)
+
+    pd.DataFrame({"fecha": df_futuro["fecha"], "prediccion": predicciones}).to_csv(ruta_salida, index=False)
     print(f"Predicciones guardadas en {ruta_salida}")
 
+
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Uso: python src/predict.py <ruta_features.csv> <ruta_salida.csv>")
-    else:
-        generar_predicciones(sys.argv[1], sys.argv[2])
+    generar_predicciones(sys.argv[1], sys.argv[2])
